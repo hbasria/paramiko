@@ -248,6 +248,7 @@ class Transport (threading.Thread):
         self.server_accepts = [ ]
         self.server_accept_cv = threading.Condition(self.lock)
         self.subsystem_table = { }
+	self.ops_counter = 0
 
     def __repr__(self):
         """
@@ -1455,6 +1456,11 @@ class Transport (threading.Thread):
                     elif (self.auth_handler is not None) and (ptype in self.auth_handler._handler_table):
                         self.auth_handler._handler_table[ptype](self.auth_handler, m)
                     else:
+                        self.ops_counter += 1
+			
+                        if self.ops_counter > 9:
+                            raise SSHException('Too many ops')
+
                         self._log(WARNING, 'Oops, unhandled type %d' % ptype)
                         msg = Message()
                         msg.add_byte(chr(MSG_UNIMPLEMENTED))
